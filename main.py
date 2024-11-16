@@ -487,13 +487,30 @@ def main():
         # join weather data to stations/cities as we need the lat/long
         stations_df = pd.read_csv('cities.csv')
         weather_df = weather_df.merge(stations_df[['station_id', 'latitude', 'longitude']], on='station_id', how='left')
+        logger.info(f"Weather data after station merge: {len(weather_df)} rows")
 
+        # Clean column names
         data_df.columns = data_df.columns.str.strip()
         weather_df.columns = weather_df.columns.str.strip()
 
-        data_df = data_df.dropna(subset=['LATITUDE', 'LONGITUDE'])
-        weather_df = weather_df.dropna(subset=['latitude', 'longitude'])
+          # Clean bio data
+        columns_to_clean_bio = ['LATITUDE', 'LONGITUDE', 'YEAR']
+        data_df = data_df.dropna(subset=columns_to_clean_bio)
+        logger.info(f"Bio data after cleaning NaNs: {len(data_df)} rows")
         
+        # Print unique years
+        logger.info(f"Bio data years range: {data_df['YEAR'].min()} to {data_df['YEAR'].max()}")
+        
+        # Clean weather data
+        weather_columns = weather_df.columns
+        lat_col = next(col for col in weather_columns if 'lat' in col.lower())
+        lon_col = next(col for col in weather_columns if 'lon' in col.lower())
+        
+        columns_to_clean_weather = [lat_col, lon_col, 'avg_temp_c', 'precipitation_mm']
+        weather_df = weather_df.dropna(subset=columns_to_clean_weather)
+        logger.info(f"Weather data after cleaning NaNs: {len(weather_df)} rows")
+        
+        # Filter years
         max_year = data_df['YEAR'].max()
         data_df = data_df[data_df['YEAR'] >= (max_year - number_of_years)]
         logger.info(f"filtered data to last {number_of_years} years from {max_year}")
@@ -506,18 +523,37 @@ def main():
         weather_df['rounded_lat'] = weather_df['latitude'].round(1)
         weather_df['rounded_lon'] = weather_df['longitude'].round(1)
 
+        # Check coordinate ranges
+        logger.info(f"Bio lat range: {data_df['LATITUDE'].min():.2f} to {data_df['LATITUDE'].max():.2f}")
+        logger.info(f"Bio lon range: {data_df['LONGITUDE'].min():.2f} to {data_df['LONGITUDE'].max():.2f}")
+        logger.info(f"Weather lat range: {weather_df[lat_col].min():.2f} to {weather_df[lat_col].max():.2f}")
+        logger.info(f"Weather lon range: {weather_df[lon_col].min():.2f} to {weather_df[lon_col].max():.2f}")
+        
+        # Merge datasets
         merged_df = pd.merge(
             data_df, weather_df, 
             left_on=['rounded_lat', 'rounded_lon'], 
             right_on=['rounded_lat', 'rounded_lon'], 
             how='inner'
         )
-
+        
+        logger.info(f"Data after merge: {len(merged_df)} rows")
+        
         # merged_df = pd.DataFrame()
         # for _, row in data_df.iterrows():
         #     if within_radius(row, weather_df):
         #         merged_df = merged_df.append(row)
         
+        # Final NaN check
+        if merged_df.isna().any().any():
+            logger.warning("Found NaN values in merged dataset")
+            merged_df = merged_df.dropna()
+            
+        logger.info(f"Final merged dataset: {len(merged_df)} rows")
+        
+        if len(merged_df) == 0:
+            raise ValueError("No valid data after cleaning")
+            
         print(f"Merged dataset contains {len(merged_df)} records")
         print(merged_df.head())
 
