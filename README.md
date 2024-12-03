@@ -1,6 +1,6 @@
 # quantum_hackathon_2024
 
-### Champion of the hackathon organized by QWorld and School of Code and sponsored by SandboxAQ to build apps to tackle the UN’s 17 Sustainable Development Goals!
+### Champion of Quantum Hackathon organized by QWorld and School of Code and sponsored by SandboxAQ to build apps to tackle the UN’s 17 Sustainable Development Goals!
 
 ## Current Problem: 
 Despite collecting terabytes of environmental and ecological data around the globData complexity often overwhelm Conservation experts, decision-makers and the general public , leading to delayed responses and apathy, especially in critical ecosystems where every moment can count
